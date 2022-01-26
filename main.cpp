@@ -79,7 +79,7 @@ double primary() {
             return d;
         }
         case '8':
-            return d;
+            return t.value;
     }
     return 0;
 }
