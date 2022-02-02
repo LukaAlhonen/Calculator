@@ -1,23 +1,27 @@
+/**
+ * Simple command line calculator
+ */
+
 #include "include/std_lib_facilities.h"
 
 class Token {
 public:
-    char kind;        // what kind of token
-    double value;     // for numbers: a value
-    Token(char ch)    // make a Token from a char
+    char kind;
+    double value;
+    Token(char ch)
             :kind(ch), value(0) { }
-    Token(char ch, double val)     // make a Token from a char and a double
+    Token(char ch, double val)
             :kind(ch), value(val) { }
 };
 
 class TokenStream {
 public:
     TokenStream();
-    Token get(); // get token
-    void putBack(Token t); // put token back
+    Token get();
+    void putBack(Token t);
 private:
-    bool full; // Is buffer full?
-    Token buffer; // Buffer for token
+    bool full;
+    Token buffer;
 };
 
 TokenStream::TokenStream()
@@ -40,21 +44,22 @@ Token TokenStream::get() {
     }
 
     char ch;
-    cin >> ch;    // note that >> skips whitespace (space, newline, tab, etc.)
+    cin >> ch;
 
     switch (ch) {
-        case ';':    // for "print"
-        case 'q':    // for "quit"
+        case '=':
+        case 'x':
+        case 'q':
         case '(': case ')': case '+': case '-': case '*': case '/':
-            return Token(ch);        // let each character represent itself
+            return Token(ch);
         case '.':
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
         {
-            cin.putback(ch);         // put digit back into the input stream
+            cin.putback(ch);
             double val;
-            cin >> val;              // read a floating-point number
-            return Token('8', val);   // let '8' represent "a number"
+            cin >> val;
+            return Token('8', val);
         }
         default:
             error("Bad token");
@@ -80,6 +85,12 @@ double primary() {
         }
         case '8':
             return t.value;
+        case '-':
+            return -primary();
+        case '+':
+            return +primary();
+        default:
+            error("primary expected");
     }
     return 0;
 }
@@ -126,21 +137,24 @@ double expression() {
 
 int main()
 try {
-    double val = 0;
     while (cin) {
+        cout << "> ";
         Token t = ts.get();
-        if (t.kind == 'q') {
-            // ‘q’ for “quit”
-            break;
+        while (t.kind == '=') t=ts.get();
+        if (t.kind == 'x' || t.kind == 'q') {
+            keep_window_open();
+            return 0;
         }
-        if (t.kind == ';') {
-            // ‘;’ for “print now”
-            cout << "=" << val << '\n';
-        } else {
-            ts.putBack(t);
-            val = expression();
-        }
+        ts.putBack(t);
+        cout << expression() << '\n';
     }
+    keep_window_open();
+    return 0;
+}
+catch (runtime_error& e) {
+    cerr << e.what() << '\n';
+    keep_window_open("~~");
+    return 1;
 }
 catch (exception& e) {
     cerr << e.what() << endl;
