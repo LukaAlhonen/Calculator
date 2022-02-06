@@ -9,6 +9,15 @@
 const char number = '8';
 const char quit = 'q';
 const char print = '=';
+const char name = 'a';
+const char let = 'L';
+const string declKey = 'let';
+
+class Variable {
+public:
+    string name;
+    double value;
+};
 
 class Token {
 public:
@@ -25,6 +34,7 @@ public:
     TokenStream();
     Token get();
     void putBack(Token t);
+    void ignore(char c);
 private:
     bool full;
     Token buffer;
@@ -73,12 +83,49 @@ Token TokenStream::get() {
             return Token(number, val);
         }
         default:
+            if(isalpha(ch)){
+                cin.putback(ch);
+                string s;
+                cin >> s;
+                if(s == declKey) return Token(let);
+                return Token{name,s};
+            }
+
             error("Bad token");
     }
 
 }
 
+void TokenStream::ignore(char c){
+    if (full && c == buffer.kind){
+        full = false;
+        return;
+    }
+    full = false;
+
+    char ch = 0;
+    while(cin >> ch){
+        if(ch == c) return;
+    }
+}
+
+vector <Variable> varTable;
 TokenStream ts;
+
+double getValue(string s){
+    for(const Variable& v : varTable) if(v.name == s) return v.value;
+    error("get: undefined Variable!", s);
+}
+
+void setValue(string s, double d){
+    for(Variable& v: varTable){
+        if(v.name == s){
+            v.value = d;
+            return;
+        }
+    }
+    error("set: undefined Variable!");
+}
 
 double expression();
 
@@ -154,15 +201,63 @@ double expression() {
     }
 }
 
+bool isDeclared(string name){
+    for(const Variable& v: varTable){
+        if(v.name == var) return true;
+    }
+    return false;
+}
+
+Variable declareVar(string name, double value){
+    if(isDeclared(name)) error(name, " declared twice");
+    varTable.push_back(Variable(name,value));
+    return value;
+}
+
+double declaration(){
+    Token t = ts.get();
+    if(t.kind != name) error("name, expected in declaration!");
+    string varName = t.name;
+
+    Token t2 = ts.get();
+    if(t2.kind != '=') error("missing '=' in declaration of ", varName);
+
+    double d = expression();
+    declareVar(varName, d);
+    return d;
+}
+
+double statement() {
+    Token t = ts.get();
+    switch(t.kind){
+        case let:
+            return declaration();
+        default:
+        {
+            t.putBack();
+            return expression();
+        }
+    }
+}
+
+void cleanup(){
+    ts.ignore(print);
+}
+
 void calculate () {
-  while (cin) {
-      cout << "> ";
-      Token t = ts.get();
-      while (t.kind == print) t=ts.get();
-      if (t.kind == quit) return;
-      ts.putBack(t);
-      cout << expression() << '\n';
-  }
+    while (cin)
+    try {
+        cout << "> ";
+        Token t = ts.get();
+        while (t.kind == print) t=ts.get();
+        if (t.kind == quit) return;
+        ts.putBack(t);
+        cout << statement() << '\n';
+    }
+    catch (exception& e){
+        cerr << e.what() << endl;
+        cleanup();
+    }
 }
 
 int main()
