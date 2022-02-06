@@ -3,3 +3,4 @@ cmake-build-debug/
 calculator00.cpp
 calculator02buggy.cpp
 build
+CMakeLists.txt

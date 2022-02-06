@@ -2,7 +2,13 @@
  * Simple command line calculator
  */
 
+// TODO: error handling
+
 #include "include/std_lib_facilities.h"
+
+const char number = '8';
+const char quit = 'q';
+const char print = '=';
 
 class Token {
 public:
@@ -47,10 +53,15 @@ Token TokenStream::get() {
     cin >> ch;
 
     switch (ch) {
-        case '=':
-        case 'x':
-        case 'q':
-        case '(': case ')': case '+': case '-': case '*': case '/':
+        case print:
+        case quit:
+        case '(':
+        case ')':
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+        case '%':
             return Token(ch);
         case '.':
         case '0': case '1': case '2': case '3': case '4':
@@ -59,7 +70,7 @@ Token TokenStream::get() {
             cin.putback(ch);
             double val;
             cin >> val;
-            return Token('8', val);
+            return Token(number, val);
         }
         default:
             error("Bad token");
@@ -83,7 +94,7 @@ double primary() {
             }
             return d;
         }
-        case '8':
+        case number:
             return t.value;
         case '-':
             return -primary();
@@ -108,6 +119,14 @@ double term() {
                 left /= primary();
                 t = ts.get();
                 break;
+            case '%':
+            {
+                double d = primary();
+                if (d == 0) error("divide by zero");
+                left = fmod(left,d);
+                t = ts.get();
+                break;
+            }
             default:
                 ts.putBack(t);
                 return left;
@@ -135,19 +154,21 @@ double expression() {
     }
 }
 
+void calculate () {
+  while (cin) {
+      cout << "> ";
+      Token t = ts.get();
+      while (t.kind == print) t=ts.get();
+      if (t.kind == quit) return;
+      ts.putBack(t);
+      cout << expression() << '\n';
+  }
+}
+
 int main()
 try {
-    while (cin) {
-        cout << "> ";
-        Token t = ts.get();
-        while (t.kind == '=') t=ts.get();
-        if (t.kind == 'x' || t.kind == 'q') {
-            keep_window_open();
-            return 0;
-        }
-        ts.putBack(t);
-        cout << expression() << '\n';
-    }
+    cout << "type '=' after expression for output and 'q' to quit" << endl;
+    calculate();
     keep_window_open();
     return 0;
 }
