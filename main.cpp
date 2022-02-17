@@ -4,14 +4,7 @@
 
 #include "include/std_lib_facilities.h"
 #include "include/token.h"
-
-// Class to represent variables
-class Variable {
-public:
-    string name;
-    double value;
-    Variable(string n, double d) :name(n), value(d) { }
-};
+#include "include/variable.h"
 
 vector <Variable> varTable; // Vector containing declared variables
 TokenStream ts;
